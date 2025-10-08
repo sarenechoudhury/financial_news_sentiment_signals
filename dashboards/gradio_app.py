@@ -116,5 +116,5 @@ with gr.Blocks(theme="soft") as demo:
 
     output_table.change(fn=prepare_csv, inputs=output_table, outputs=download_btn)
 
-demo.launch()
+demo.launch(share=True)
 

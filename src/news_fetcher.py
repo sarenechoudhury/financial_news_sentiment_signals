@@ -5,6 +5,7 @@ import os
 from io import StringIO
 from dotenv import load_dotenv
 load_dotenv()
+import time
 
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
@@ -114,6 +115,7 @@ def fetch_news_gdelt(query, start_date, end_date, maxrecords=250):
         df_chunk = _fetch_gdelt_chunk(query, current, chunk_end, maxrecords)
         if not df_chunk.empty:
             all_dfs.append(df_chunk)
+        time.sleep(2)
         current = chunk_end  # ✅ progress forward, no recursion
 
     if all_dfs:

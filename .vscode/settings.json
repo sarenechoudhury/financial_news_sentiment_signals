@@ -1,4 +1,15 @@
 {
-    "jupyter.notebookFileRoot": "${workspaceFolder}",
-    "python.defaultInterpreterPath": "venv/bin/python"
+    // Use the absolute path to your venv Python binary
+    "python.defaultInterpreterPath": "/Users/sareneac/sandbox/sarenechoudhury/financial_news_sentiment/venv/bin/python3",
+    
+    // Optional but helps Pylance find site-packages
+    "python.analysis.extraPaths": [
+        "/Users/sareneac/sandbox/sarenechoudhury/financial_news_sentiment/venv/lib/python3.11/site-packages"
+    ],
+
+    // Makes sure VS Code activates the venv in the integrated terminal
+    "python.terminal.activateEnvironment": true,
+
+    // Ensures Pylance reloads properly
+    "python.analysis.autoSearchPaths": true
 }
