@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import gradio as gr
 from datetime import datetime, date
 import io
+import tempfile
+
 
 # --- Ensure project root on path ---
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -44,6 +46,9 @@ def run_analysis(ticker, start_date, end_date):
 
     # 2️⃣ Analyze sentiment (FinBERT)
     df_news = analyze_sentiment(df_news)
+    print("After sentiment analysis:")
+    print(df_news.head())
+    print(df_news.columns)
 
     # 3️⃣ Normalize & aggregate daily sentiment
     df_daily = normalize_sentiment(df_news)
@@ -52,7 +57,8 @@ def run_analysis(ticker, start_date, end_date):
     merged = merge_sentiment_with_returns(df_daily, ticker, start_date, end_date)
     if merged.empty:
         return "No overlapping trading days found.", None, pd.DataFrame()
-    
+    print(merged[["date", "sentiment_score", "Return"]].head())
+    print(merged[["sentiment_score", "Return"]].describe())
     corr = merged["sentiment_score"].corr(merged["Return"])
     status_msg = f"Correlation between sentiment and return: {corr:.2f}"
 
@@ -98,7 +104,7 @@ with gr.Blocks(theme="soft") as demo:
         if merged is None or merged.empty:
             return None
         return merged.to_csv(index=False)
-    """
+    
     def prepare_csv(df):
         if df is None or df.empty:
             return None
@@ -106,7 +112,16 @@ with gr.Blocks(theme="soft") as demo:
         df.to_csv(csv_buffer, index=False)
         csv_buffer.seek(0)
         return csv_buffer
+    """
 
+    def prepare_csv(df):
+        if df is None or df.empty:
+            return None
+
+        # Create a temporary file
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+        df.to_csv(tmp.name, index=False)
+        return tmp.name
 
     run_btn.click(
         fn=run_analysis,

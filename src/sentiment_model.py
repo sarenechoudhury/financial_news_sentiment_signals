@@ -14,11 +14,14 @@ def load_finbert():
 
 def analyze_sentiment(df, text_col="title"):
     nlp = load_finbert()
-    #results = df[text_col].apply(lambda x: nlp(x)[0] if isinstance(x, str) else {"label": "neutral", "score": 0})
     texts = df[text_col].fillna("").tolist()
     preds = nlp(texts, batch_size=8, truncation=True)
+
     df["sentiment"] = [p["label"] for p in preds]
     df["confidence"] = [p["score"] for p in preds]
-    #df["sentiment"] = results.apply(lambda x: x["label"])
-    #df["confidence"] = results.apply(lambda x: x["score"])
+
+    sentiment_map = {"positive": 1, "neutral": 0, "negative": -1}
+    df["sentiment_score"] = df.apply(
+        lambda x: sentiment_map.get(x["sentiment"].lower(), 0) * x["confidence"], axis=1
+    )
     return df

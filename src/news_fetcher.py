@@ -1,4 +1,4 @@
-import requests
+import requests, io, zipfile
 import pandas as pd
 from datetime import datetime, timedelta, date
 import os
@@ -8,6 +8,7 @@ load_dotenv()
 import time
 
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+CACHE_DIR = "data/raw/gdelt_cache"
 
 def fetch_news(query, start_date, end_date=None, language="en", page_size=100):
     """
@@ -127,7 +128,62 @@ def fetch_news_gdelt(query, start_date, end_date, maxrecords=250):
         return pd.DataFrame()  # ✅ not None
 
 
+def fetch_gdelt_bulk(keyword, start_date, end_date):
 
+    if isinstance(start_date, (datetime, date)):
+        start_date = start_date.strftime("%Y-%m-%d")
+    if isinstance(end_date, (datetime, date)):
+        end_date = end_date.strftime("%Y-%m-%d")
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(end_date, "%Y-%m-%d")
+
+    all_chunks = []
+
+    # GDELT files come every 15 minutes
+    delta = timedelta(minutes=15)
+    current = start
+
+    while current <= end:
+        ts = current.strftime("%Y%m%d%H%M%S")
+        url = f"http://data.gdeltproject.org/gdeltv2/{ts}.export.CSV.zip"
+        try:
+            r = requests.get(url, timeout=10)
+            if r.status_code != 200:
+                current += delta
+                continue
+
+            with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+                with z.open(z.namelist()[0]) as f:
+                    df = pd.read_csv(f, sep="\t", header=None, low_memory=False)
+
+            # tone is column 34 (zero-based 33)
+            df = df[[0, 1, 2, 5, 6, 15, 26, 30, 33]]
+            df.columns = [
+                "GLOBALEVENTID", "SQLDATE", "Actor1Code", "Actor1Name",
+                "Actor2Name", "EventCode", "SOURCEURL", "Themes", "Tone"
+            ]
+
+            # Filter for keyword in actor or source
+            mask = df["Actor1Name"].fillna("").str.contains(keyword, case=False) | \
+                   df["Actor2Name"].fillna("").str.contains(keyword, case=False)
+            df = df[mask]
+
+            if not df.empty:
+                df["date"] = pd.to_datetime(df["SQLDATE"], format="%Y%m%d")
+                all_chunks.append(df[["date", "Tone", "SOURCEURL"]])
+        except Exception as e:
+            print("⚠️", ts, e)
+
+        current += delta
+
+    if not all_chunks:
+        return pd.DataFrame(columns=["date", "Tone", "SOURCEURL"])
+
+    df_all = pd.concat(all_chunks, ignore_index=True)
+    df_all["Tone"] = pd.to_numeric(df_all["Tone"], errors="coerce")
+    df_daily = df_all.groupby("date", as_index=False)["Tone"].mean()
+    df_daily.rename(columns={"Tone": "sentiment_score"}, inplace=True)
+    return df_daily
 
 """ 
 def fetch_news_gdelt_gkg(query, start_date, end_date):
@@ -192,7 +248,7 @@ def fetch_news_auto(query, start_date, end_date):
 
     if days > 30:
         print("🗂 Using GDELT Doc API for historical news data...")
-        df = _fetch_gdelt_chunk(query, start_date, end_date)
+        df = fetch_gdelt_bulk(query, start_date, end_date)
 
         # ✅ Fallback protection
         if df is None or df.empty:
