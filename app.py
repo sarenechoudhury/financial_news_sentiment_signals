@@ -77,7 +77,7 @@ def run_analysis(ticker, start_date, end_date):
 
 
 # --- Gradio UI ---
-with gr.Blocks(theme="soft") as demo:
+with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown("# Financial News Sentiment Dashboard")
     gr.Markdown("Analyze sentiment vs market returns using FinBERT and Yahoo Finance data.")
 
