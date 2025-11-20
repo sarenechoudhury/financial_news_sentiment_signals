@@ -128,5 +128,5 @@ with gr.Blocks(theme="soft") as demo:
     output_table.change(fn=prepare_csv, inputs=output_table, outputs=download_btn)
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
 
