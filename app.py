@@ -6,10 +6,6 @@ from datetime import datetime, date
 import io
 import tempfile
 
-
-# --- Ensure project root on path ---
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 # --- Import project modules ---
 from src.news_fetcher import fetch_news_auto
 from src.sentiment_model import analyze_sentiment
@@ -131,5 +127,6 @@ with gr.Blocks(theme="soft") as demo:
 
     output_table.change(fn=prepare_csv, inputs=output_table, outputs=download_btn)
 
-demo.launch(share=True)
+if __name__ == "__main__":
+    demo.launch()
 
