@@ -128,5 +128,16 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     output_table.change(fn=prepare_csv, inputs=output_table, outputs=download_btn)
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)))
+    # Helpful log so you can see in Render logs that we reached here
+    print("Starting Gradio app...")
+
+    port = int(os.environ.get("PORT", 7860))
+
+    # queue() is recommended for production / concurrency
+    demo.queue().launch(
+        server_name="0.0.0.0",   # Make it accessible from outside the container
+        server_port=port,        # Use Render's PORT env var
+        show_error=True,         # Make sure errors show up in logs / UI
+    )
+
 
