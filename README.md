@@ -15,6 +15,20 @@ Current status: **Work in progress / Experimental**
 - Eventually support multiple models & comparison (VADER → FinBERT → LLM-based)
 
 ## 📁 Repository Structure
+financial_news_sentiment_signals/
+├── notebooks/              # Exploratory data analysis & model experiments
+│   ├── 01_data_collection.ipynb
+│   ├── 02_sentiment_analysis.ipynb
+│   └── 03_signal_generation_backtest.ipynb
+├── src/                    # Production-ready modular code
+│   ├── data/               # News scrapers & APIs connectors
+│   ├── sentiment/          # Sentiment models & preprocessors
+│   ├── signals/            # Signal logic & position sizing
+│   └── utils/              # Logging, config, helpers
+├── app.py                  # Gradio / Streamlit demo interface (choose your flavor)
+├── requirements.txt        # Core dependencies
+├── .gitignore
+└── README.md
 
 ## 🚀 Quick Start (Demo)
 
