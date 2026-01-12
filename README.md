@@ -48,3 +48,9 @@ pip install -r requirements.txt
 # 4. Launch the web demo
 streamlit run app.py        # or
 python app.py               # depending on your implementation
+
+
+Feel free to modify sections according to what is actually implemented in your repo.  
+You can also add badges, screenshots of the dashboard, or performance charts later when ready.
+
+Good luck with the project! 🚀
