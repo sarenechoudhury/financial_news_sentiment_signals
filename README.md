@@ -15,3 +15,22 @@ Current status: **Work in progress / Experimental**
 - Eventually support multiple models & comparison (VADER → FinBERT → LLM-based)
 
 ## 📁 Repository Structure
+
+## 🚀 Quick Start (Demo)
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/sarenechoudhury/financial_news_sentiment_signals.git
+cd financial_news_sentiment_signals
+
+# 2. Create & activate virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate    # Linux/macOS
+venv\Scripts\activate       # Windows
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Launch the web demo
+streamlit run app.py        # or
+python app.py               # depending on your implementation
