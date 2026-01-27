@@ -5,6 +5,7 @@ import os
 from io import StringIO
 from dotenv import load_dotenv
 load_dotenv()
+print("NEWS_API_KEY loaded?", bool(os.getenv("NEWS_API_KEY")))
 import time
 
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")

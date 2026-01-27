@@ -108,16 +108,10 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
 
 
 if __name__ == "__main__":
-    print("Starting Gradio app...")
-
     port = int(os.environ.get("PORT", "7860"))
+    print(f"Local:   http://127.0.0.1:{port}")
+    demo.queue().launch(server_name="0.0.0.0", server_port=port, share=False, show_error=True)
 
-    demo.queue().launch(
-        server_name="0.0.0.0",
-        server_port=port,
-        share=False,
-        show_error=True,
-    )
 
 
 
