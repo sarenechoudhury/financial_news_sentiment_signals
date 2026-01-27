@@ -1,0 +1,14 @@
+gradio>=4.0.0
+pandas==2.2.3
+numpy>=1.23,<2.0
+matplotlib==3.10.1
+
+requests==2.32.3
+beautifulsoup4==4.13.4
+python-dotenv>=1.0.0
+yfinance==0.2.65
+
+transformers==4.51.3
+sentence-transformers==4.1.0
+torch==2.7.0
+
