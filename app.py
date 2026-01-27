@@ -1,79 +1,82 @@
-import os, sys
+import os
+import io
+import tempfile
+from datetime import datetime, date
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import gradio as gr
-from datetime import datetime, date
-import io
-import tempfile
 
 # --- Import project modules ---
 from src.news_fetcher import fetch_news_auto
 from src.sentiment_model import analyze_sentiment
 from src.signal_analysis import merge_sentiment_with_returns, normalize_sentiment
 
+
 def normalize_date(d):
     """Handle datetime, date, float (timestamp), or string inputs safely."""
     if isinstance(d, (datetime, date)):
         return d.date() if isinstance(d, datetime) else d
-    elif isinstance(d, (float, int)):
+    if isinstance(d, (float, int)):
         return datetime.fromtimestamp(d).date()
-    elif isinstance(d, str):
+    if isinstance(d, str):
         try:
             return datetime.strptime(d.split("T")[0], "%Y-%m-%d").date()
         except ValueError:
             return None
-    else:
-        return None
+    return None
+
 
 def run_analysis(ticker, start_date, end_date):
     start_date = normalize_date(start_date)
     end_date = normalize_date(end_date)
 
     if not start_date or not end_date:
-        return "Please select both start and end dates in the correct format.", None, pd.DataFrame()
+        return "Please select both start and end dates.", None, pd.DataFrame()
 
     if start_date > end_date:
         return "Start date must be before end date.", None, pd.DataFrame()
-    
-    # 1️⃣ Fetch news
+
+    # 1) Fetch news
     df_news = fetch_news_auto(ticker, start_date=start_date, end_date=end_date)
-    if df_news.empty:
+    if df_news is None or df_news.empty:
         return "No news found in this date range.", None, pd.DataFrame()
 
-    # 2️⃣ Analyze sentiment (FinBERT)
+    # 2) Analyze sentiment
     df_news = analyze_sentiment(df_news)
-    print("After sentiment analysis:")
-    print(df_news.head())
-    print(df_news.columns)
 
-    # 3️⃣ Normalize & aggregate daily sentiment
+    # 3) Normalize & aggregate daily sentiment
     df_daily = normalize_sentiment(df_news)
 
-    # 4️⃣ Merge with returns
+    # 4) Merge with returns
     merged = merge_sentiment_with_returns(df_daily, ticker, start_date, end_date)
-    if merged.empty:
+    if merged is None or merged.empty:
         return "No overlapping trading days found.", None, pd.DataFrame()
-    print(merged[["date", "sentiment_score", "Return"]].head())
-    print(merged[["sentiment_score", "Return"]].describe())
+
     corr = merged["sentiment_score"].corr(merged["Return"])
     status_msg = f"Correlation between sentiment and return: {corr:.2f}"
 
-
-    # 5️⃣ Plot Sentiment vs Returns
+    # 5) Plot
     fig, ax1 = plt.subplots(figsize=(8, 5))
     ax2 = ax1.twinx()
 
-    ax1.plot(merged["date"], merged["Return"], color="blue", label="Stock Return")
-    ax2.plot(merged["date"], merged["sentiment_score"], color="orange", label="Sentiment")
+    ax1.plot(merged["date"], merged["Return"], label="Stock Return")
+    ax2.plot(merged["date"], merged["sentiment_score"], label="Sentiment")
 
     ax1.set_xlabel("Date")
-    ax1.set_ylabel("Daily Return", color="blue")
-    ax2.set_ylabel("Sentiment Score", color="orange")
-    plt.title(f"{ticker}: Sentiment vs Returns")
+    ax1.set_ylabel("Daily Return")
+    ax2.set_ylabel("Sentiment Score")
     fig.tight_layout()
 
-
     return status_msg, fig, merged
+
+
+def prepare_csv(df: pd.DataFrame):
+    if df is None or df.empty:
+        return None
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+    df.to_csv(tmp.name, index=False)
+    return tmp.name
 
 
 # --- Gradio UI ---
@@ -83,10 +86,10 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
 
     with gr.Row():
         ticker = gr.Textbox(label="Stock Ticker (e.g. AAPL, TSLA, NVDA)", value="AAPL")
+
     with gr.Row():
         start_date = gr.DateTime(label="Start Date", include_time=False)
         end_date = gr.DateTime(label="End Date", include_time=False)
-
 
     run_btn = gr.Button("Run Analysis")
 
@@ -94,30 +97,6 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     output_plot = gr.Plot(label="Sentiment vs Returns")
     output_table = gr.Dataframe(label="Merged Dataset")
     download_btn = gr.DownloadButton(label="Download CSV")
-
-    """
-    def prepare_csv(merged):
-        if merged is None or merged.empty:
-            return None
-        return merged.to_csv(index=False)
-    
-    def prepare_csv(df):
-        if df is None or df.empty:
-            return None
-        csv_buffer = io.StringIO()
-        df.to_csv(csv_buffer, index=False)
-        csv_buffer.seek(0)
-        return csv_buffer
-    """
-
-    def prepare_csv(df):
-        if df is None or df.empty:
-            return None
-
-        # Create a temporary file
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
-        df.to_csv(tmp.name, index=False)
-        return tmp.name
 
     run_btn.click(
         fn=run_analysis,
@@ -127,17 +106,18 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
 
     output_table.change(fn=prepare_csv, inputs=output_table, outputs=download_btn)
 
+
 if __name__ == "__main__":
-    # Helpful log so you can see in Render logs that we reached here
     print("Starting Gradio app...")
 
-    port = int(os.environ.get("PORT", 7860))
+    port = int(os.environ.get("PORT", "7860"))
 
-    # queue() is recommended for production / concurrency
     demo.queue().launch(
-        server_name="0.0.0.0",   # Make it accessible from outside the container
-        server_port=port,        # Use Render's PORT env var
-        show_error=True,         # Make sure errors show up in logs / UI
+        server_name="0.0.0.0",
+        server_port=port,
+        share=False,
+        show_error=True,
     )
+
 
 
